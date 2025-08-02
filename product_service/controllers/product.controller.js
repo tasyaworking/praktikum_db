@@ -43,6 +43,14 @@ exports.update = async (req, res) => {
       where: { id: req.params.id }
     });
     if (updated === 0) return res.status(404).json({ error: 'Produk tidak ditemukan' });
+
+    const product = await Product.findByPk(req.params.id);
+    
+    await axios.post('http://localhost:4005/events', {
+      type: 'ProductUpdated',
+      data: { id: product.id, name: product.name, price: product.price, stock: product.stock }
+    });
+
     res.json({ message: 'Produk diperbarui' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -51,10 +59,18 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
   try {
-    const deleted = await Product.destroy({
+    const product = await Product.findByPk(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product tidak ditemukan' });
+
+    await Product.destroy({
       where: { id: req.params.id }
     });
-    if (deleted === 0) return res.status(404).json({ error: 'Produk tidak ditemukan' });
+
+    await axios.post('http://localhost:4005/events', {
+      type: 'ProductDeleted',
+      data: { id: product.id }
+    });
+
     res.json({ message: 'Produk dihapus' });
   } catch (err) {
     res.status(500).json({ error: err.message });
